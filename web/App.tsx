@@ -2,54 +2,33 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import {
   CitError,
   LOCATIONS,
-  MAX_STRING,
   cityFileName,
   encodePng,
   imageToRgba,
-  validateCity,
   type CitImage,
   type Field,
   type ListName,
-  type Problem,
 } from "../src/index.ts";
-import { blankDraft, draftToJson, editList, listLines, loadCit, saveCit, type Draft } from "./draft.ts";
+import {
+  blankDraft,
+  draftProblems,
+  editList,
+  label,
+  listLines,
+  loadCit,
+  saveCit,
+  type Draft,
+  type DraftProblem,
+} from "./draft.ts";
 import { imageFromFile } from "./image.ts";
-
-const FIELD_LABELS: Partial<Record<Field, string>> = {
-  name: "Name",
-  mapX: "Map X",
-  mapY: "Map Y",
-  image: "Picture",
-  locations: "",
-  intro: "Intro",
-  treasures: "Treasures",
-};
-
-/** "sportClub" -> "Sport club" */
-function label(field: Field): string {
-  return FIELD_LABELS[field] ?? field.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`).replace(/^./, (c) => c.toUpperCase());
-}
 
 const isLocation = (field: Field) => (LOCATIONS as readonly string[]).includes(field);
 
-/** Textarea line (0-based) that a list problem points at. */
-function problemLine(problem: Problem, draft: Draft): number | undefined {
-  if (problem.index === undefined) return undefined;
-  return listLines(draft.lists[problem.field as ListName])[problem.index]?.line;
-}
-
-function describe(problem: Problem, draft: Draft): string {
-  const line = problemLine(problem, draft);
-  const where = label(problem.field) + (line === undefined ? "" : ` line ${line + 1}`);
-  return where ? `${where} ${problem.message}` : problem.message.replace(/^./, (c) => c.toUpperCase());
-}
-
-function focusProblem(problem: Problem, draft: Draft) {
-  const el = document.getElementById(`field-${problem.field}`);
+function focusProblem({ field, line }: DraftProblem) {
+  const el = document.getElementById(`field-${field}`);
   if (!el) return;
   el.scrollIntoView({ block: "center" });
   el.focus();
-  const line = problemLine(problem, draft);
   if (el instanceof HTMLTextAreaElement && line !== undefined) {
     const lines = el.value.split("\n");
     const start = lines.slice(0, line).reduce((n, l) => n + l.length + 1, 0);
@@ -104,19 +83,21 @@ function Picture({ image }: { image: CitImage }) {
   return <canvas class="picture" ref={ref} />;
 }
 
-function Problems({ problems, draft }: { problems: Problem[]; draft: Draft }) {
+function Problems({ problems }: { problems: DraftProblem[] }) {
   if (!problems.length) return null;
   return (
     <ul class="error">
       {problems.map((p) => (
-        <li>{describe(p, draft)}</li>
+        <li>{p.text}</li>
       ))}
     </ul>
   );
 }
 
-function ListEditor(props: { field: ListName; draft: Draft; problems: Problem[]; onChange: (text: string) => void }) {
-  const { field, draft, problems, onChange } = props;
+function ListEditor(props: { field: ListName; draft: Draft; problems: DraftProblem[]; onChange: (text: string) => void }) {
+  const { field, draft, onChange } = props;
+  const problems = props.problems.filter((p) => p.field === field);
+  const badLines = new Set(problems.map((p) => p.line));
   const text = draft.lists[field];
   const lines = text.split("\n");
   const off = isLocation(field) && !listLines(text).length;
@@ -128,8 +109,8 @@ function ListEditor(props: { field: ListName; draft: Draft; problems: Problem[];
       </h3>
       <div class="list">
         <div class="gutter" aria-hidden="true">
-          {lines.map((line) => (
-            <div class={line.length > MAX_STRING ? "over" : undefined}>{line.trim() ? line.length : " "}</div>
+          {lines.map((line, i) => (
+            <div class={badLines.has(i) ? "over" : undefined}>{line.trim() ? line.length : " "}</div>
           ))}
         </div>
         <textarea
@@ -140,7 +121,7 @@ function ListEditor(props: { field: ListName; draft: Draft; problems: Problem[];
           onInput={(e) => onChange(e.currentTarget.value)}
         />
       </div>
-      <Problems problems={problems.filter((p) => p.field === field)} draft={draft} />
+      <Problems problems={problems} />
     </section>
   );
 }
@@ -153,7 +134,7 @@ export function App() {
   const openInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
 
-  const problems = useMemo(() => (draft ? validateCity(draftToJson(draft), draft.image) : []), [draft]);
+  const problems = useMemo(() => (draft ? draftProblems(draft) : []), [draft]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -295,7 +276,7 @@ export function App() {
                 New York 138, 25 · Tokyo 45, 32 · Sydney 54, 80.
               </small>
             </p>
-            <Problems problems={problems.filter((p) => ["name", "mapX", "mapY", "image"].includes(p.field))} draft={draft} />
+            <Problems problems={problems.filter((p) => ["name", "mapX", "mapY", "image"].includes(p.field))} />
 
             <h2>Save</h2>
             {problems.length ? (
@@ -308,10 +289,10 @@ export function App() {
                         href={`#field-${p.field}`}
                         onClick={(e) => {
                           e.preventDefault();
-                          focusProblem(p, draft);
+                          focusProblem(p);
                         }}
                       >
-                        {describe(p, draft)}
+                        {p.text}
                       </a>
                     </li>
                   ))}
@@ -342,7 +323,7 @@ export function App() {
               What witnesses say when the thief is heading to this city, one clue per line. @1 = he/she, @2 = his/her.
               A location with no clues isn't in this city; at least 8 need clues.
             </p>
-            <Problems problems={problems.filter((p) => p.field === "locations")} draft={draft} />
+            <Problems problems={problems.filter((p) => p.field === "locations")} />
             {LOCATIONS.map((field) => (
               <ListEditor field={field} draft={draft} problems={problems} onChange={(t) => update(editList(draft, field, t))} />
             ))}

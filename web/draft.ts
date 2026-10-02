@@ -10,9 +10,11 @@ import {
   cityToJson,
   jsonToCity,
   readCit,
+  validateCity,
   writeCit,
   type CitImage,
   type CityJson,
+  type Field,
   type ListName,
 } from "../src/index.ts";
 
@@ -97,6 +99,38 @@ export function draftToJson(draft: Draft): CityJson {
   if (Object.keys(draft.countOverrides).length) json.countOverrides = draft.countOverrides;
   if (Object.keys(draft.raw).length) json.raw = draft.raw;
   return json;
+}
+
+const FIELD_LABELS: Partial<Record<Field, string>> = {
+  name: "Name",
+  mapX: "Map X",
+  mapY: "Map Y",
+  image: "Picture",
+  locations: "",
+  intro: "Intro",
+  treasures: "Treasures",
+};
+
+/** How the form names a field: "sportClub" -> "Sport club". */
+export function label(field: Field): string {
+  return FIELD_LABELS[field] ?? field.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`).replace(/^./, (c) => c.toUpperCase());
+}
+
+/** A broken game rule, located on the form and worded for the checklist. */
+export interface DraftProblem {
+  field: Field;
+  /** 0-based line in the field's text box, for a problem with one string. */
+  line?: number;
+  text: string;
+}
+
+export function draftProblems(draft: Draft): DraftProblem[] {
+  return validateCity(draftToJson(draft), draft.image).map(({ field, index, message }) => {
+    const line = index === undefined ? undefined : listLines(draft.lists[field as ListName])[index].line;
+    const where = label(field) + (line === undefined ? "" : ` line ${line + 1}`);
+    const text = where ? `${where} ${message}` : message.replace(/^./, (c) => c.toUpperCase());
+    return line === undefined ? { field, text } : { field, line, text };
+  });
 }
 
 /** Throws CitError (or RangeError for a truncated file) when the bytes aren't a usable city. */
