@@ -1,19 +1,30 @@
 /**
- * Rules a city must pass before it is written. Every problem blocks saving, in
- * the web editor and in `cli.ts pack` alike.
+ * Game rules: what a city must satisfy for the game to cope with it. Every
+ * problem blocks saving, in the web editor and in `cli.ts pack` alike. Limits of
+ * the file format itself are writeCit's concern, not this module's.
  */
 
-import { LOCATIONS, MAX_NAME, MIN_LOCATIONS, type Location } from "./cit.ts";
-import type { CityJson, ListName } from "./json.ts";
+import { LOCATIONS, type CitImage, type Location } from "./cit.ts";
+import type { CityJson, ListName } from "./schema.ts";
+
+/** CARMEN.EXE copies at most 20 characters of the city name. */
+export const MAX_NAME = 20;
+
+/** Every original city has at least this many locations; fewer risks hanging the game. */
+export const MIN_LOCATIONS = 8;
 
 /** Longest string allowed in any list: the longest one the original game ships (BAMAKO). */
 export const MAX_STRING = 160;
+
+/** Size of every original city picture. */
+export const IMAGE_WIDTH = 136;
+export const IMAGE_HEIGHT = 164;
 
 /** Size of the world map (CARMEN.DAT resource 1002); mapX/mapY are pixels on it. */
 export const MAP_WIDTH = 264;
 export const MAP_HEIGHT = 95;
 
-export type Field = "name" | "mapX" | "mapY" | "locations" | ListName;
+export type Field = "name" | "mapX" | "mapY" | "image" | "locations" | ListName;
 
 export interface Problem {
   field: Field;
@@ -45,7 +56,7 @@ function checkCoordinate(value: number, size: number): string | undefined {
   }
 }
 
-export function validateCity(json: CityJson): Problem[] {
+export function validateCity(json: CityJson, image: CitImage): Problem[] {
   const problems: Problem[] = [];
   const add = (field: Field, message: string | undefined, index?: number) => {
     if (message) problems.push(index === undefined ? { field, message } : { field, index, message });
@@ -57,6 +68,10 @@ export function validateCity(json: CityJson): Problem[] {
 
   add("mapX", checkCoordinate(json.mapX, MAP_WIDTH));
   add("mapY", checkCoordinate(json.mapY, MAP_HEIGHT));
+
+  if (image.width !== IMAGE_WIDTH || image.height !== IMAGE_HEIGHT) {
+    add("image", `is ${image.width}×${image.height}; it must be ${IMAGE_WIDTH}×${IMAGE_HEIGHT}`);
+  }
 
   const checkList = (field: ListName, strings: string[], placeholders: boolean) => {
     strings.forEach((text, i) => {

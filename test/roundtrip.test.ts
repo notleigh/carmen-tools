@@ -24,7 +24,7 @@ for (const file of files) {
     const bytes = new Uint8Array(await readFile(join(dir!, file)));
     const { draft, warnings } = loadCit(bytes);
     assert.deepEqual(warnings, []);
-    assert.deepEqual(validateCity(draftToJson(draft)).map((p) => `${problemPath(p)}: ${p.message}`), []);
+    assert.deepEqual(validateCity(draftToJson(draft), draft.image).map((p) => `${problemPath(p)}: ${p.message}`), []);
     assert.deepEqual(saveCit(draft), bytes);
   });
 }

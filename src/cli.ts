@@ -32,14 +32,13 @@ async function extract(path: string, outDir: string): Promise<string[]> {
 
 async function pack(path: string, outDir: string): Promise<string[]> {
   const json = parseCityJson(await readFile(path, "utf8"));
-  const problems = validateCity(json);
+  const image = await decodePng(await readFile(join(dirname(path), json.image)));
+  const problems = validateCity(json, image);
   if (problems.length) {
     throw new CitError(problems.map((p) => `\n  ${problemPath(p)}: ${p.message}`).join(""));
   }
-  const image = await decodePng(await readFile(join(dirname(path), json.image)));
-  const { bytes, warnings } = writeCit(jsonToCity(json, image));
-  await writeFile(join(outDir, `${stem(path)}.CIT`), bytes);
-  return warnings;
+  await writeFile(join(outDir, `${stem(path)}.CIT`), writeCit(jsonToCity(json, image)));
+  return [];
 }
 
 async function main(): Promise<number> {

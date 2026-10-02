@@ -4,6 +4,8 @@
  */
 
 import {
+  IMAGE_HEIGHT,
+  IMAGE_WIDTH,
   LOCATIONS,
   cityToJson,
   jsonToCity,
@@ -13,10 +15,6 @@ import {
   type CityJson,
   type ListName,
 } from "../src/index.ts";
-
-/** Every original city picture is this size. */
-export const IMAGE_WIDTH = 136;
-export const IMAGE_HEIGHT = 164;
 
 export const LISTS: readonly ListName[] = ["intro", "treasures", ...LOCATIONS];
 
@@ -108,5 +106,5 @@ export function loadCit(bytes: Uint8Array): { draft: Draft; warnings: string[] }
 }
 
 export function saveCit(draft: Draft): Uint8Array {
-  return writeCit(jsonToCity(draftToJson(draft), draft.image)).bytes;
+  return writeCit(jsonToCity(draftToJson(draft), draft.image));
 }

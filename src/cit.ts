@@ -28,9 +28,6 @@ export const PALETTE: readonly (readonly [number, number, number])[] = [
   [255, 255, 255],
 ];
 
-/** CARMEN.EXE copies at most 20 characters of the city name */
-export const MAX_NAME = 20;
-
 /**
  * Location types, in game order: LOCATIONS[k - 1] is location k, whose clues are
  * resource 100 + k and whose icon is resource 100 + k in CARMEN.DAT.
@@ -43,9 +40,6 @@ export const LOCATIONS = [
 export type Location = (typeof LOCATIONS)[number];
 
 export const locationId = (location: Location): number => 101 + LOCATIONS.indexOf(location);
-
-/** Every existing city has at least this many locations; fewer risks hanging the game. */
-export const MIN_LOCATIONS = 8;
 
 export const INTRO = 3;
 export const TREASURES = 4;
@@ -123,6 +117,7 @@ function encodeAscii(text: string, what: string): number[] {
   const out: number[] = [];
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
+    if (c === 0) throw new CitError(`${what}: contains a NUL character, which would end the string early`);
     if (c > 0x7f) throw new CitError(`${what}: non-ASCII text; the game can only show plain ASCII`);
     out.push(c);
   }
@@ -273,12 +268,11 @@ export function readCit(bytes: Uint8Array): { city: City; warnings: string[] } {
   return { city: { ...header, image, sections }, warnings };
 }
 
-export function writeCit(city: City): { bytes: Uint8Array; warnings: string[] } {
-  const warnings: string[] = [];
-  if (city.name.length > MAX_NAME) {
-    warnings.push(`name longer than ${MAX_NAME} characters will be cut off`);
-  }
-
+/**
+ * Throws CitError only for what the file format can't hold. Whether the game
+ * copes with the city is validateCity's job; call it first.
+ */
+export function writeCit(city: City): Uint8Array {
   const resources = new Map<number, Uint8Array>();
   resources.set(
     HEADER,
@@ -294,12 +288,6 @@ export function writeCit(city: City): { bytes: Uint8Array; warnings: string[] } 
     resources.set(section.id, section.kind === "raw" ? section.data : encodeStrings(section));
   }
   const clues = [...resources.keys()].filter((id) => id > CLUE_INDEX && isStringResource(id)).sort((a, b) => a - b);
-  if (clues.length < MIN_LOCATIONS) {
-    warnings.push(
-      `only ${clues.length} of ${LOCATIONS.length} locations have clues; existing cities have ` +
-        `${MIN_LOCATIONS}-${LOCATIONS.length}, and too few locations in common with another city may hang the game`,
-    );
-  }
   const index = new DataView(new ArrayBuffer(2 + 2 * clues.length));
   index.setUint16(0, clues.length, true);
   clues.forEach((id, i) => index.setUint16(2 + 2 * i, id - CLUE_INDEX, true));
@@ -323,8 +311,5 @@ export function writeCit(city: City): { bytes: Uint8Array; warnings: string[] } 
   const header = new DataView(new ArrayBuffer(6));
   header.setUint32(0, offset, true);
   header.setUint16(4, directory.byteLength, true);
-  return {
-    bytes: concat([new Uint8Array(header.buffer), ...body, new Uint8Array(directory.buffer)]),
-    warnings,
-  };
+  return concat([new Uint8Array(header.buffer), ...body, new Uint8Array(directory.buffer)]);
 }

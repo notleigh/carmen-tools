@@ -19,6 +19,7 @@ const FIELD_LABELS: Partial<Record<Field, string>> = {
   name: "Name",
   mapX: "Map X",
   mapY: "Map Y",
+  image: "Picture",
   locations: "",
   intro: "Intro",
   treasures: "Treasures",
@@ -152,7 +153,7 @@ export function App() {
   const openInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
 
-  const problems = useMemo(() => (draft ? validateCity(draftToJson(draft)) : []), [draft]);
+  const problems = useMemo(() => (draft ? validateCity(draftToJson(draft), draft.image) : []), [draft]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -254,7 +255,9 @@ export function App() {
           <aside>
             <Picture image={draft.image} />
             <p>
-              <button onClick={() => imageInput.current!.click()}>Replace…</button>{" "}
+              <button id="field-image" onClick={() => imageInput.current!.click()}>
+                Replace…
+              </button>{" "}
               <button onClick={downloadPng}>Download PNG</button>
             </p>
             <p>
@@ -292,7 +295,7 @@ export function App() {
                 New York 138, 25 · Tokyo 45, 32 · Sydney 54, 80.
               </small>
             </p>
-            <Problems problems={problems.filter((p) => ["name", "mapX", "mapY"].includes(p.field))} draft={draft} />
+            <Problems problems={problems.filter((p) => ["name", "mapX", "mapY", "image"].includes(p.field))} draft={draft} />
 
             <h2>Save</h2>
             {problems.length ? (

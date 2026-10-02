@@ -1,7 +1,6 @@
 /** Turning any image the browser can open into a city picture. */
 
-import { rgbaToImage, type CitImage } from "../src/index.ts";
-import { IMAGE_HEIGHT, IMAGE_WIDTH } from "./draft.ts";
+import { IMAGE_HEIGHT, IMAGE_WIDTH, rgbaToImage, type CitImage } from "../src/index.ts";
 
 /** CGA pixels are 1.2x taller than wide (320x200 shown on a 4:3 screen). */
 export const PIXEL_ASPECT = 1.2;
