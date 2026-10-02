@@ -1,0 +1,71 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 1rem;
+}
+
+.layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+aside {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  width: 300px;
+  flex-shrink: 0;
+}
+
+main {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    display: block;
+  }
+  aside {
+    position: static;
+    max-height: none;
+    width: auto;
+  }
+}
+
+canvas.picture {
+  display: block;
+  width: 272px;
+  height: 394px; /* 2x, with CGA pixels 1.2x taller than wide */
+  image-rendering: pixelated;
+}
+
+.list {
+  display: flex;
+  font: 13px/18px monospace;
+}
+
+.gutter {
+  width: 3.5em;
+  padding: 3px 0.5em 0 0;
+  text-align: right;
+  color: gray;
+  white-space: pre;
+}
+
+.list textarea {
+  flex: 1;
+  font: inherit;
+  padding: 2px;
+  resize: none;
+}
+
+.off {
+  opacity: 0.5;
+}
+
+.over,
+.error {
+  color: red;
+}

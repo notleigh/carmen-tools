@@ -1,0 +1,27 @@
+{
+  "name": "carmen-cit",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc",
+    "extract": "node src/cli.ts extract",
+    "pack": "node src/cli.ts pack"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^24.19.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.2"
+  },
+  "dependencies": {
+    "preact": "^11.0.0"
+  }
+}
