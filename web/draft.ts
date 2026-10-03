@@ -10,7 +10,6 @@ import {
   decodeCit,
   encodeCit,
   validateCity,
-  type CitImage,
   type City,
   type Field,
   type ListName,
@@ -18,16 +17,12 @@ import {
 
 export const LISTS: readonly ListName[] = ["intro", "treasures", ...LOCATIONS];
 
-/** Form contents: number fields stay text so they can be empty, lists are one string per line. */
-export interface Draft {
-  name: string;
+/** Form contents: number fields stay text so they can be empty, lists are one string per text box. */
+export type Draft = Omit<City, "mapX" | "mapY" | "intro" | "treasures" | "clues"> & {
   mapX: string;
   mapY: string;
-  image: CitImage;
   lists: Record<ListName, string>;
-  countOverrides: Partial<Record<ListName, number>>;
-  raw: Record<string, string>;
-}
+};
 
 function emptyLists(): Record<ListName, string> {
   return Object.fromEntries(LISTS.map((key) => [key, ""])) as Record<ListName, string>;
@@ -40,25 +35,16 @@ export function blankDraft(): Draft {
     mapY: "",
     image: { width: IMAGE_WIDTH, height: IMAGE_HEIGHT, pixels: new Uint8Array(IMAGE_WIDTH * IMAGE_HEIGHT) },
     lists: emptyLists(),
-    countOverrides: {},
-    raw: {},
   };
 }
 
 export function draftFromCity(city: City): Draft {
+  const { mapX, mapY, intro, treasures, clues, ...rest } = city;
   const lists = emptyLists();
-  lists.intro = city.intro.join("\n");
-  lists.treasures = city.treasures.join("\n");
-  for (const location of LOCATIONS) lists[location] = (city.clues[location] ?? []).join("\n");
-  return {
-    name: city.name,
-    mapX: String(city.mapX),
-    mapY: String(city.mapY),
-    image: city.image,
-    lists,
-    countOverrides: { ...city.countOverrides },
-    raw: { ...city.raw },
-  };
+  lists.intro = intro.join("\n");
+  lists.treasures = treasures.join("\n");
+  for (const location of LOCATIONS) lists[location] = (clues[location] ?? []).join("\n");
+  return { ...rest, mapX: String(mapX), mapY: String(mapY), lists };
 }
 
 /** The strings in a text box, with the 0-based line each came from; blank lines are skipped. */
@@ -71,32 +57,33 @@ export function listLines(text: string): { text: string; line: number }[] {
 
 /** Editing a list drops its count override, so the saved count matches what's on screen. */
 export function editList(draft: Draft, key: ListName, text: string): Draft {
-  const { [key]: _, ...countOverrides } = draft.countOverrides;
-  return { ...draft, lists: { ...draft.lists, [key]: text }, countOverrides };
+  const { [key]: _, ...countOverrides } = draft.countOverrides ?? {};
+  return {
+    ...draft,
+    lists: { ...draft.lists, [key]: text },
+    countOverrides: Object.keys(countOverrides).length ? countOverrides : undefined,
+  };
 }
 
 const toNumber = (text: string): number => (text.trim() === "" ? NaN : Number(text));
 
 /** A location whose text box is empty is left out of the city. */
 export function draftToCity(draft: Draft): City {
-  const strings = (key: ListName) => listLines(draft.lists[key]).map((l) => l.text);
+  const { mapX, mapY, lists, ...rest } = draft;
+  const strings = (key: ListName) => listLines(lists[key]).map((l) => l.text);
   const clues: City["clues"] = {};
   for (const location of LOCATIONS) {
     const list = strings(location);
     if (list.length) clues[location] = list;
   }
-  const city: City = {
-    name: draft.name,
-    mapX: toNumber(draft.mapX),
-    mapY: toNumber(draft.mapY),
-    image: draft.image,
+  return {
+    ...rest,
+    mapX: toNumber(mapX),
+    mapY: toNumber(mapY),
     intro: strings("intro"),
     treasures: strings("treasures"),
     clues,
   };
-  if (Object.keys(draft.countOverrides).length) city.countOverrides = draft.countOverrides;
-  if (Object.keys(draft.raw).length) city.raw = draft.raw;
-  return city;
 }
 
 /** How the form names a field: "sportClub" -> "Sport club". */
