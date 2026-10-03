@@ -10,7 +10,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { test } from "node:test";
 import { problemPath, validateCity } from "../src/index.ts";
-import { draftToJson, loadCit, saveCit } from "../web/draft.ts";
+import { draftToCity, loadCit, saveCit } from "../web/draft.ts";
 
 const dir = process.env.CARMEN_DIR;
 const files = dir ? (await readdir(dir)).filter((f) => /\.cit$/i.test(f)) : [];
@@ -24,7 +24,7 @@ for (const file of files) {
     const bytes = new Uint8Array(await readFile(join(dir!, file)));
     const { draft, warnings } = loadCit(bytes);
     assert.deepEqual(warnings, []);
-    assert.deepEqual(validateCity(draftToJson(draft), draft.image).map((p) => `${problemPath(p)}: ${p.message}`), []);
+    assert.deepEqual(validateCity(draftToCity(draft)).map((p) => `${problemPath(p)}: ${p.message}`), []);
     assert.deepEqual(saveCit(draft), bytes);
   });
 }

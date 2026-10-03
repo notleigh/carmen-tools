@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CitError, INTRO, TREASURES, parseCityJson, writeCit, type City } from "../src/index.ts";
+import { CitError, encodeCit, parseCityJson, type City } from "../src/index.ts";
 
 const valid = {
   name: "Lolly World",
@@ -58,16 +58,15 @@ function city(text: string): City {
     mapX: 0,
     mapY: 0,
     image: { width: 4, height: 1, pixels: new Uint8Array(4) },
-    sections: [
-      { kind: "strings", id: INTRO, strings: [text] },
-      { kind: "strings", id: TREASURES, strings: ["a lolly"] },
-    ],
+    intro: [text],
+    treasures: ["a lolly"],
+    clues: {},
   };
 }
 
-test("writeCit throws only on what the format can't hold", () => {
-  assert.ok(writeCit(city("fine")) instanceof Uint8Array);
-  assert.throws(() => writeCit(city("a\0b")), /NUL/);
-  assert.throws(() => writeCit(city("café")), /non-ASCII/);
-  assert.throws(() => writeCit({ ...city("ok"), image: { width: 6, height: 1, pixels: new Uint8Array(6) } }), /multiple of 4/);
+test("encodeCit throws only on what the format can't hold", () => {
+  assert.ok(encodeCit(city("fine")) instanceof Uint8Array);
+  assert.throws(() => encodeCit(city("a\0b")), /NUL/);
+  assert.throws(() => encodeCit(city("café")), /non-ASCII/);
+  assert.throws(() => encodeCit({ ...city("ok"), image: { width: 6, height: 1, pixels: new Uint8Array(6) } }), /multiple of 4/);
 });

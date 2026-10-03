@@ -20,6 +20,8 @@
  *   String list = u16 count, then NUL-terminated strings.
  */
 
+import type { CitImage, City, ListName } from "./schema.ts";
+
 /** CGA palette 1, high intensity: black, light cyan, light magenta, white */
 export const PALETTE: readonly (readonly [number, number, number])[] = [
   [0, 0, 0],
@@ -46,39 +48,6 @@ export const TREASURES = 4;
 const HEADER = 1;
 const IMAGE = 2;
 const CLUE_INDEX = 100;
-
-/** Palette indices 0-3, one byte per pixel, row-major. Width is a multiple of 4. */
-export interface CitImage {
-  width: number;
-  height: number;
-  pixels: Uint8Array;
-}
-
-export interface StringSection {
-  kind: "strings";
-  id: number;
-  strings: string[];
-  /** Stored count when it differs from strings.length (ROME's intro says 2 but holds 3). */
-  count?: number;
-}
-
-/** A resource this tool doesn't understand, kept as-is. */
-export interface RawSection {
-  kind: "raw";
-  id: number;
-  data: Uint8Array;
-}
-
-export type Section = StringSection | RawSection;
-
-export interface City {
-  name: string;
-  mapX: number;
-  mapY: number;
-  image: CitImage;
-  /** Intro (3), treasures (4), location clues (101-112) and any unknown resources, in id order. */
-  sections: Section[];
-}
 
 export class CitError extends Error {
   name = "CitError";
@@ -199,21 +168,26 @@ function encodeImage(image: CitImage): Uint8Array {
   return concat([header, rle(packed)]);
 }
 
-function decodeStrings(id: number, body: Uint8Array): StringSection {
+function decodeStrings(body: Uint8Array): { strings: string[]; count: number } {
   const count = body[0] | (body[1] << 8);
   const strings = decodeAscii(body.subarray(2)).split("\0");
   if (strings.length && strings[strings.length - 1] === "") strings.pop();
-  const section: StringSection = { kind: "strings", id, strings };
-  if (count !== strings.length) section.count = count;
-  return section;
+  return { strings, count };
 }
 
-function encodeStrings(section: StringSection): Uint8Array {
-  const count = section.count ?? section.strings.length;
+function encodeStrings(id: number, strings: string[], count = strings.length): Uint8Array {
   const out = [count & 0xff, count >> 8];
-  section.strings.forEach((s, i) => out.push(...encodeAscii(s, `resource ${section.id} line ${i + 1}`), 0));
+  strings.forEach((s, i) => out.push(...encodeAscii(s, `resource ${id} line ${i + 1}`), 0));
   return Uint8Array.from(out);
 }
+
+/** Which City list a string resource holds. */
+function listName(id: number): ListName {
+  return id === INTRO ? "intro" : id === TREASURES ? "treasures" : LOCATIONS[id - 101];
+}
+
+const toHex = (data: Uint8Array): string => Array.from(data, (b) => b.toString(16).padStart(2, "0")).join("");
+const fromHex = (hex: string): Uint8Array => Uint8Array.from(hex.match(/../g) ?? [], (h) => parseInt(h, 16));
 
 export function concat(parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
@@ -225,7 +199,7 @@ export function concat(parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
-export function readCit(bytes: Uint8Array): { city: City; warnings: string[] } {
+export function decodeCit(bytes: Uint8Array): { city: City; warnings: string[] } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const warnings: string[] = [];
   const dirOffset = view.getUint32(0, true);
@@ -237,7 +211,9 @@ export function readCit(bytes: Uint8Array): { city: City; warnings: string[] } {
 
   let header: Pick<City, "name" | "mapX" | "mapY"> | undefined;
   let image: CitImage | undefined;
-  const sections: Section[] = [];
+  const lists: Partial<Record<ListName, string[]>> = {};
+  const counts: Partial<Record<ListName, number>> = {};
+  const raw: Record<string, string> = {};
   for (let i = 0; i < count; i++) {
     const entry = dirOffset + 4 + 8 * i;
     const id = view.getUint16(entry, true);
@@ -250,29 +226,36 @@ export function readCit(bytes: Uint8Array): { city: City; warnings: string[] } {
     if (id === HEADER) {
       const end = body.indexOf(0, 4);
       header = {
-        mapY: body[0] | (body[1] << 8),
-        mapX: body[2] | (body[3] << 8),
         name: decodeAscii(body.subarray(4, end < 0 ? undefined : end)),
+        mapX: body[2] | (body[3] << 8),
+        mapY: body[0] | (body[1] << 8),
       };
     } else if (id === IMAGE) {
       image = decodeImage(body, warnings);
     } else if (id === CLUE_INDEX) {
-      // Derivable from which clue sections exist; rebuilt by writeCit.
+      // Derivable from which clue lists exist; rebuilt by encodeCit.
     } else if (isStringResource(id)) {
-      sections.push(decodeStrings(id, body));
+      const { strings, count } = decodeStrings(body);
+      lists[listName(id)] = strings;
+      if (count !== strings.length) counts[listName(id)] = count;
     } else {
-      sections.push({ kind: "raw", id, data: body.slice() });
+      raw[id] = toHex(body);
     }
   }
   if (!header || !image) throw new CitError("file has no city header or image");
-  return { city: { ...header, image, sections }, warnings };
+  const { intro, treasures, ...clues } = lists;
+  if (!intro || !treasures) throw new CitError("file has no intro or treasure list");
+  const city: City = { ...header, image, intro, treasures, clues };
+  if (Object.keys(counts).length) city.countOverrides = counts;
+  if (Object.keys(raw).length) city.raw = raw;
+  return { city, warnings };
 }
 
 /**
  * Throws CitError only for what the file format can't hold. Whether the game
  * copes with the city is validateCity's job; call it first.
  */
-export function writeCit(city: City): Uint8Array {
+export function encodeCit(city: City): Uint8Array {
   const resources = new Map<number, Uint8Array>();
   resources.set(
     HEADER,
@@ -283,9 +266,15 @@ export function writeCit(city: City): Uint8Array {
     ]),
   );
   resources.set(IMAGE, encodeImage(city.image));
-  for (const section of city.sections) {
-    if (resources.has(section.id)) throw new CitError(`resource ${section.id} appears twice`);
-    resources.set(section.id, section.kind === "raw" ? section.data : encodeStrings(section));
+  const list = (id: number, strings: string[] | undefined) => {
+    if (strings) resources.set(id, encodeStrings(id, strings, city.countOverrides?.[listName(id)]));
+  };
+  list(INTRO, city.intro);
+  list(TREASURES, city.treasures);
+  for (const location of LOCATIONS) list(locationId(location), city.clues[location]);
+  for (const [id, hex] of Object.entries(city.raw ?? {})) {
+    if (resources.has(Number(id))) throw new CitError(`resource ${id} appears twice`);
+    resources.set(Number(id), fromHex(hex));
   }
   const clues = [...resources.keys()].filter((id) => id > CLUE_INDEX && isStringResource(id)).sort((a, b) => a - b);
   const index = new DataView(new ArrayBuffer(2 + 2 * clues.length));

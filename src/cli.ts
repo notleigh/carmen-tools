@@ -9,35 +9,33 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 import {
   CitError,
-  cityToJson,
+  decodeCit,
   decodePng,
+  encodeCit,
   encodePng,
-  jsonToCity,
   parseCityJson,
   problemPath,
-  readCit,
   validateCity,
-  writeCit,
 } from "./index.ts";
 
 const stem = (path: string) => basename(path, extname(path));
 
 async function extract(path: string, outDir: string): Promise<string[]> {
-  const { city, warnings } = readCit(await readFile(path));
+  const { city, warnings } = decodeCit(await readFile(path));
   const pngName = `${stem(path)}.png`;
   await writeFile(join(outDir, pngName), await encodePng(city.image));
-  await writeFile(join(outDir, `${stem(path)}.json`), JSON.stringify(cityToJson(city, pngName), null, 2) + "\n");
+  await writeFile(join(outDir, `${stem(path)}.json`), JSON.stringify({ ...city, image: pngName }, null, 2) + "\n");
   return warnings;
 }
 
 async function pack(path: string, outDir: string): Promise<string[]> {
   const json = parseCityJson(await readFile(path, "utf8"));
-  const image = await decodePng(await readFile(join(dirname(path), json.image)));
-  const problems = validateCity(json, image);
+  const city = { ...json, image: await decodePng(await readFile(join(dirname(path), json.image))) };
+  const problems = validateCity(city);
   if (problems.length) {
     throw new CitError(problems.map((p) => `\n  ${problemPath(p)}: ${p.message}`).join(""));
   }
-  await writeFile(join(outDir, `${stem(path)}.CIT`), writeCit(jsonToCity(json, image)));
+  await writeFile(join(outDir, `${stem(path)}.CIT`), encodeCit(city));
   return [];
 }
 

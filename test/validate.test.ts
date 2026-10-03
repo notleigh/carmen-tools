@@ -8,15 +8,15 @@ import {
   problemPath,
   validateCity,
   type CitImage,
-  type CityJson,
+  type City,
 } from "../src/index.ts";
 
-function city(overrides: Partial<CityJson> = {}): CityJson {
+function city(overrides: Partial<City> = {}): City {
   return {
     name: "Lolly World",
     mapX: 52,
     mapY: 85,
-    image: "",
+    image: image(),
     intro: ["Welcome to Lolly World."],
     treasures: ["a lolly"],
     clues: Object.fromEntries(LOCATIONS.slice(0, 8).map((l) => [l, ["@1 changed @2 money to lollies."]])),
@@ -28,10 +28,10 @@ function image(width = IMAGE_WIDTH, height = IMAGE_HEIGHT): CitImage {
   return { width, height, pixels: new Uint8Array(width * height) };
 }
 
-const paths = (json: CityJson, img = image()) => validateCity(json, img).map(problemPath);
+const paths = (city: City) => validateCity(city).map(problemPath);
 
 test("a complete city has no problems", () => {
-  assert.deepEqual(validateCity(city(), image()), []);
+  assert.deepEqual(validateCity(city()), []);
 });
 
 test("name is required, at most 20 characters, ASCII, no @", () => {
@@ -50,8 +50,8 @@ test("map position must be a whole number on the 264x95 map", () => {
 });
 
 test("the image must be exactly 136x164", () => {
-  assert.deepEqual(paths(city(), image(200, 100)), ["image"]);
-  assert.deepEqual(paths(city(), image(136, 160)), ["image"]);
+  assert.deepEqual(paths(city({ image: image(200, 100) })), ["image"]);
+  assert.deepEqual(paths(city({ image: image(136, 160) })), ["image"]);
 });
 
 test("strings are at most 160 characters and plain ASCII", () => {

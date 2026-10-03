@@ -1,11 +1,11 @@
 /**
  * Game rules: what a city must satisfy for the game to cope with it. Every
  * problem blocks saving, in the web editor and in `cli.ts pack` alike. Limits of
- * the file format itself are writeCit's concern, not this module's.
+ * the file format itself are encodeCit's concern, not this module's.
  */
 
-import { LOCATIONS, type CitImage, type Location } from "./cit.ts";
-import type { CityJson, ListName } from "./schema.ts";
+import { LOCATIONS, type Location } from "./cit.ts";
+import type { City, ListName } from "./schema.ts";
 
 /** CARMEN.EXE copies at most 20 characters of the city name. */
 export const MAX_NAME = 20;
@@ -56,21 +56,22 @@ function checkCoordinate(value: number, size: number): string | undefined {
   }
 }
 
-export function validateCity(json: CityJson, image: CitImage): Problem[] {
+export function validateCity(city: City): Problem[] {
   const problems: Problem[] = [];
   const add = (field: Field, message: string | undefined, index?: number) => {
     if (message) problems.push(index === undefined ? { field, message } : { field, index, message });
   };
 
-  if (!json.name) add("name", "is required");
-  else if (json.name.length > MAX_NAME) add("name", `must be at most ${MAX_NAME} characters (the game cuts off the rest)`);
-  else add("name", checkText(json.name, false));
+  if (!city.name) add("name", "is required");
+  else if (city.name.length > MAX_NAME) add("name", `must be at most ${MAX_NAME} characters (the game cuts off the rest)`);
+  else add("name", checkText(city.name, false));
 
-  add("mapX", checkCoordinate(json.mapX, MAP_WIDTH));
-  add("mapY", checkCoordinate(json.mapY, MAP_HEIGHT));
+  add("mapX", checkCoordinate(city.mapX, MAP_WIDTH));
+  add("mapY", checkCoordinate(city.mapY, MAP_HEIGHT));
 
-  if (image.width !== IMAGE_WIDTH || image.height !== IMAGE_HEIGHT) {
-    add("image", `is ${image.width}×${image.height}; it must be ${IMAGE_WIDTH}×${IMAGE_HEIGHT}`);
+  const { width, height } = city.image;
+  if (width !== IMAGE_WIDTH || height !== IMAGE_HEIGHT) {
+    add("image", `is ${width}×${height}; it must be ${IMAGE_WIDTH}×${IMAGE_HEIGHT}`);
   }
 
   const checkList = (field: ListName, strings: string[], placeholders: boolean) => {
@@ -81,14 +82,14 @@ export function validateCity(json: CityJson, image: CitImage): Problem[] {
     });
   };
 
-  if (!json.intro.length) add("intro", "needs at least one sentence");
-  checkList("intro", json.intro, false);
-  if (!json.treasures.length) add("treasures", "needs at least one treasure");
-  checkList("treasures", json.treasures, false);
+  if (!city.intro.length) add("intro", "needs at least one sentence");
+  checkList("intro", city.intro, false);
+  if (!city.treasures.length) add("treasures", "needs at least one treasure");
+  checkList("treasures", city.treasures, false);
 
-  const used = LOCATIONS.filter((location: Location) => json.clues[location]);
+  const used = LOCATIONS.filter((location: Location) => city.clues[location]);
   for (const location of used) {
-    const clues = json.clues[location]!;
+    const clues = city.clues[location]!;
     if (!clues.length) add(location, "has no clues; leave it out to disable the location");
     checkList(location, clues, true);
   }

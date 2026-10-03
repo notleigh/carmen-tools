@@ -7,13 +7,11 @@ import {
   IMAGE_HEIGHT,
   IMAGE_WIDTH,
   LOCATIONS,
-  cityToJson,
-  jsonToCity,
-  readCit,
+  decodeCit,
+  encodeCit,
   validateCity,
-  writeCit,
   type CitImage,
-  type CityJson,
+  type City,
   type Field,
   type ListName,
 } from "../src/index.ts";
@@ -47,19 +45,19 @@ export function blankDraft(): Draft {
   };
 }
 
-export function draftFromJson(json: CityJson, image: CitImage): Draft {
+export function draftFromCity(city: City): Draft {
   const lists = emptyLists();
-  lists.intro = json.intro.join("\n");
-  lists.treasures = json.treasures.join("\n");
-  for (const location of LOCATIONS) lists[location] = (json.clues[location] ?? []).join("\n");
+  lists.intro = city.intro.join("\n");
+  lists.treasures = city.treasures.join("\n");
+  for (const location of LOCATIONS) lists[location] = (city.clues[location] ?? []).join("\n");
   return {
-    name: json.name,
-    mapX: String(json.mapX),
-    mapY: String(json.mapY),
-    image,
+    name: city.name,
+    mapX: String(city.mapX),
+    mapY: String(city.mapY),
+    image: city.image,
     lists,
-    countOverrides: { ...json.countOverrides },
-    raw: { ...json.raw },
+    countOverrides: { ...city.countOverrides },
+    raw: { ...city.raw },
   };
 }
 
@@ -80,25 +78,25 @@ export function editList(draft: Draft, key: ListName, text: string): Draft {
 const toNumber = (text: string): number => (text.trim() === "" ? NaN : Number(text));
 
 /** A location whose text box is empty is left out of the city. */
-export function draftToJson(draft: Draft): CityJson {
+export function draftToCity(draft: Draft): City {
   const strings = (key: ListName) => listLines(draft.lists[key]).map((l) => l.text);
-  const clues: CityJson["clues"] = {};
+  const clues: City["clues"] = {};
   for (const location of LOCATIONS) {
     const list = strings(location);
     if (list.length) clues[location] = list;
   }
-  const json: CityJson = {
+  const city: City = {
     name: draft.name,
     mapX: toNumber(draft.mapX),
     mapY: toNumber(draft.mapY),
-    image: "",
+    image: draft.image,
     intro: strings("intro"),
     treasures: strings("treasures"),
     clues,
   };
-  if (Object.keys(draft.countOverrides).length) json.countOverrides = draft.countOverrides;
-  if (Object.keys(draft.raw).length) json.raw = draft.raw;
-  return json;
+  if (Object.keys(draft.countOverrides).length) city.countOverrides = draft.countOverrides;
+  if (Object.keys(draft.raw).length) city.raw = draft.raw;
+  return city;
 }
 
 /** How the form names a field: "sportClub" -> "Sport club". */
@@ -115,7 +113,7 @@ export interface DraftProblem {
 }
 
 export function draftProblems(draft: Draft): DraftProblem[] {
-  return validateCity(draftToJson(draft), draft.image).map(({ field, index, message }) => {
+  return validateCity(draftToCity(draft)).map(({ field, index, message }) => {
     const line = index === undefined ? undefined : listLines(draft.lists[field as ListName])[index].line;
     // The locations message names its own subject ("only 7 locations have clues").
     const where = field === "locations" ? "" : `${label(field)}${line === undefined ? "" : ` line ${line + 1}`} `;
@@ -126,10 +124,10 @@ export function draftProblems(draft: Draft): DraftProblem[] {
 
 /** Throws CitError (or RangeError for a truncated file) when the bytes aren't a usable city. */
 export function loadCit(bytes: Uint8Array): { draft: Draft; warnings: string[] } {
-  const { city, warnings } = readCit(bytes);
-  return { draft: draftFromJson(cityToJson(city, ""), city.image), warnings };
+  const { city, warnings } = decodeCit(bytes);
+  return { draft: draftFromCity(city), warnings };
 }
 
 export function saveCit(draft: Draft): Uint8Array {
-  return writeCit(jsonToCity(draftToJson(draft), draft.image));
+  return encodeCit(draftToCity(draft));
 }

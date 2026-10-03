@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { blankDraft, draftProblems, draftToJson, editList, label, listLines, type Draft } from "../web/draft.ts";
+import { blankDraft, draftProblems, draftToCity, editList, label, listLines, type Draft } from "../web/draft.ts";
 
 function filled(): Draft {
   const draft = blankDraft();
@@ -22,20 +22,20 @@ test("blank lines are skipped but keep their line numbers", () => {
 });
 
 test("an empty location is left out of the city", () => {
-  const json = draftToJson(filled());
-  assert.deepEqual(Object.keys(json.clues), ["bank"]);
-  assert.deepEqual(json.clues.bank, ["@1 changed @2 money."]);
+  const city = draftToCity(filled());
+  assert.deepEqual(Object.keys(city.clues), ["bank"]);
+  assert.deepEqual(city.clues.bank, ["@1 changed @2 money."]);
 });
 
 test("empty number fields become NaN so validation flags them", () => {
-  const json = draftToJson(blankDraft());
-  assert.ok(Number.isNaN(json.mapX) && Number.isNaN(json.mapY));
+  const city = draftToCity(blankDraft());
+  assert.ok(Number.isNaN(city.mapX) && Number.isNaN(city.mapY));
 });
 
 test("editing a list drops only that list's count override", () => {
   const draft = filled();
-  assert.deepEqual(draftToJson(editList(draft, "treasures", "a ring\na hat")).countOverrides, { intro: 2 });
-  assert.equal(draftToJson(editList(draft, "intro", "One.\nTwo.")).countOverrides, undefined);
+  assert.deepEqual(draftToCity(editList(draft, "treasures", "a ring\na hat")).countOverrides, { intro: 2 });
+  assert.equal(draftToCity(editList(draft, "intro", "One.\nTwo.")).countOverrides, undefined);
 });
 
 function valid(): Draft {

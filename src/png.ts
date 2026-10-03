@@ -3,7 +3,8 @@
  * Uses only CompressionStream/DecompressionStream, available in browsers and Node 18+.
  */
 
-import { CitError, PALETTE, concat, nearestColour, type CitImage } from "./cit.ts";
+import { CitError, PALETTE, concat, nearestColour } from "./cit.ts";
+import type { CitImage } from "./schema.ts";
 
 const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
