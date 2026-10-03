@@ -101,19 +101,9 @@ export function draftToJson(draft: Draft): CityJson {
   return json;
 }
 
-const FIELD_LABELS: Partial<Record<Field, string>> = {
-  name: "Name",
-  mapX: "Map X",
-  mapY: "Map Y",
-  image: "Picture",
-  locations: "",
-  intro: "Intro",
-  treasures: "Treasures",
-};
-
 /** How the form names a field: "sportClub" -> "Sport club". */
 export function label(field: Field): string {
-  return FIELD_LABELS[field] ?? field.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`).replace(/^./, (c) => c.toUpperCase());
+  return field.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`).replace(/^./, (c) => c.toUpperCase());
 }
 
 /** A broken game rule, located on the form and worded for the checklist. */
@@ -127,8 +117,9 @@ export interface DraftProblem {
 export function draftProblems(draft: Draft): DraftProblem[] {
   return validateCity(draftToJson(draft), draft.image).map(({ field, index, message }) => {
     const line = index === undefined ? undefined : listLines(draft.lists[field as ListName])[index].line;
-    const where = label(field) + (line === undefined ? "" : ` line ${line + 1}`);
-    const text = where ? `${where} ${message}` : message.replace(/^./, (c) => c.toUpperCase());
+    // The locations message names its own subject ("only 7 locations have clues").
+    const where = field === "locations" ? "" : `${label(field)}${line === undefined ? "" : ` line ${line + 1}`} `;
+    const text = (where + message).replace(/^./, (c) => c.toUpperCase());
     return line === undefined ? { field, text } : { field, line, text };
   });
 }

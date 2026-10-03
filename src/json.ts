@@ -1,4 +1,4 @@
-/** Editable JSON form of a city; the picture is a separate PNG next to it. */
+/** Editable JSON form of a city; the image is a separate PNG next to it. */
 
 import {
   CitError,

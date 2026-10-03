@@ -28,7 +28,7 @@ function image(width = IMAGE_WIDTH, height = IMAGE_HEIGHT): CitImage {
   return { width, height, pixels: new Uint8Array(width * height) };
 }
 
-const paths = (json: CityJson, picture = image()) => validateCity(json, picture).map(problemPath);
+const paths = (json: CityJson, img = image()) => validateCity(json, img).map(problemPath);
 
 test("a complete city has no problems", () => {
   assert.deepEqual(validateCity(city(), image()), []);
@@ -49,7 +49,7 @@ test("map position must be a whole number on the 264x95 map", () => {
   assert.deepEqual(paths(city({ mapX: NaN })), ["mapX"]);
 });
 
-test("the picture must be exactly 136x164", () => {
+test("the image must be exactly 136x164", () => {
   assert.deepEqual(paths(city(), image(200, 100)), ["image"]);
   assert.deepEqual(paths(city(), image(136, 160)), ["image"]);
 });

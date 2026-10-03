@@ -60,13 +60,13 @@ test("whole-field problems have no line", () => {
   const draft = { ...editList(valid(), "palace", ""), name: "", image: { width: 4, height: 4, pixels: new Uint8Array(16) } };
   assert.deepEqual(draftProblems(draft), [
     { field: "name", text: "Name is required" },
-    { field: "image", text: "Picture is 4×4; it must be 136×164" },
+    { field: "image", text: "Image is 4×4; it must be 136×164" },
     { field: "locations", text: "Only 7 locations have clues; at least 8 are needed or the game may hang" },
   ]);
 });
 
 test("labels", () => {
   assert.equal(label("foreignMinistry"), "Foreign ministry");
-  assert.equal(label("mapX"), "Map X");
+  assert.equal(label("mapX"), "Map x");
   assert.equal(label("intro"), "Intro");
 });

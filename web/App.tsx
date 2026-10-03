@@ -72,7 +72,7 @@ async function saveFile(blob: Blob, name: string, description: string, extension
   }
 }
 
-function Picture({ image }: { image: CitImage }) {
+function ImagePreview({ image }: { image: CitImage }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current!;
@@ -80,7 +80,7 @@ function Picture({ image }: { image: CitImage }) {
     canvas.height = image.height;
     canvas.getContext("2d")!.putImageData(new ImageData(imageToRgba(image), image.width, image.height), 0, 0);
   }, [image]);
-  return <canvas class="picture" ref={ref} />;
+  return <canvas class="image" ref={ref} />;
 }
 
 function Problems({ problems }: { problems: DraftProblem[] }) {
@@ -234,7 +234,7 @@ export function App() {
       ) : (
         <div class="layout">
           <aside>
-            <Picture image={draft.image} />
+            <ImagePreview image={draft.image} />
             <p>
               <button id="field-image" onClick={() => imageInput.current!.click()}>
                 Replace…
@@ -250,7 +250,7 @@ export function App() {
             </p>
             <p>
               <label>
-                Map X{" "}
+                Map x{" "}
                 <input
                   id="field-mapX"
                   inputMode="numeric"
@@ -260,7 +260,7 @@ export function App() {
                 />
               </label>{" "}
               <label>
-                Map Y{" "}
+                Map y{" "}
                 <input
                   id="field-mapY"
                   inputMode="numeric"

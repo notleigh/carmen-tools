@@ -34,7 +34,7 @@ main {
   }
 }
 
-canvas.picture {
+canvas.image {
   display: block;
   width: 272px;
   height: 394px; /* 2x, with CGA pixels 1.2x taller than wide */

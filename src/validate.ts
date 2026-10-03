@@ -16,7 +16,7 @@ export const MIN_LOCATIONS = 8;
 /** Longest string allowed in any list: the longest one the original game ships (BAMAKO). */
 export const MAX_STRING = 160;
 
-/** Size of every original city picture. */
+/** Size of every original city image. */
 export const IMAGE_WIDTH = 136;
 export const IMAGE_HEIGHT = 164;
 

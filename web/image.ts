@@ -1,4 +1,4 @@
-/** Turning any image the browser can open into a city picture. */
+/** Turning any image the browser can open into a city image. */
 
 import { IMAGE_HEIGHT, IMAGE_WIDTH, rgbaToImage, type CitImage } from "../src/index.ts";
 
@@ -7,7 +7,7 @@ export const PIXEL_ASPECT = 1.2;
 
 /**
  * A 136x164 image keeps its pixels exactly; anything else is cropped to fill the
- * picture's on-screen shape, centred, and scaled. Either way every pixel snaps to
+ * image's on-screen shape, centred, and scaled. Either way every pixel snaps to
  * the nearest CGA colour.
  */
 export async function imageFromFile(file: File): Promise<CitImage> {
