@@ -12,6 +12,10 @@ On the disk for Where in the World is Carmen Sandiego there's a series of `.CIT`
 
 As long as the `.CIT` files are valid and conform to the DOS-style 8.3 filename length, the game will read them, and I haven't figured out a practical maximum of files as yet. So yeah, this means you can use these tools to create more cities for your game if you're convinced it was a crime that Naseby, New Zealand (population 140) was missing from the original game.
 
+![Screenshot from Carmen Sandiego with nonsense on the screen](docs/lollyworld_1.png)
+
+![Another screenshot, with more nonsense. Also a not-great CGA rendition of "The Great Buddha Sweet Shop" by Shunchōsai Takehara Nobushige from the Miyako meisho zue (1787)](docs/lollyworld_2.png)
+
 ## CLI
 
 Kick things off with:
