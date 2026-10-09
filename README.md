@@ -32,7 +32,9 @@ npm run pack -- -o OUTDIR CITY.json
 
 ## Editing the files
 
-The JSON files contain a relative file path to the png of the image, which will 136x164 pixels in the classic CGA pallette. If you're adding your own image you do need to stick to the same dimensions, but it ram each pixel down to whatever the closest matching CGA colour is (no dithering etc.) In any case, probably better editing using the CGA colours.
+The JSON files contain a relative file path to the png of the image, which will be 136x164 pixels in the classic CGA pallette. It will look a bit squished if you edit it, as the CGA pixels weren't square (turns out some CGA & EGA modes were a little odd, [Raymond Chen writes about it](https://devblogs.microsoft.com/oldnewthing/20100625-00/?p=13613/))
+
+If you're adding your own image you do need to stick to the same dimensions, but keep in mind that the image will get stretched out in game. Full colour PNGs will work, but each pixel gets mapped to the closest matching CGA colour and there's no dithering, so best off editing with the CGA pallette in mind.
 
 I've tried to add sensible validation based on what my good friend Claude found digging around, but it won't be perfect (`src/validate.ts`). Keeping clue strings below 160 seems sensible, but the best reference is extracting a couple of existing files and getting a sense of the lengths that read alright. The web interface (below!) has validation baked in to the frontend.
 
