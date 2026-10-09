@@ -12,8 +12,6 @@ On the disk for Where in the World is Carmen Sandiego there's a series of `.CIT`
 
 As long as the `.CIT` files are valid and conform to the DOS-style 8.3 filename length, the game will read them, and I haven't figured out a practical maximum of files as yet. So yeah, this means you can use these tools to create more cities for your game if you're convinced it was a crime that Naseby, New Zealand (population 140) was missing from the original game.
 
-## Getting started
-
 ## CLI
 
 Kick things off with:
