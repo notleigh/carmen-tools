@@ -1,5 +1,6 @@
 /**
- * Checks against the real game files, which can't be committed. Point CARMEN_DIR
+ * Checks against the real game files.
+ * They aren't supplied with this source so point CARMEN_DIR
  * at a folder holding the .CIT files to run them:
  *
  *   CARMEN_DIR=~/games/carmen npm test
