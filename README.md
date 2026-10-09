@@ -1,4 +1,4 @@
-# carmen-cit
+# carmen-tools
 
 Tools for editing city data in the original DOS version of *Where in the World is Carmen Sandiego* from 1985. Feel like updating the original cities for some of the things that have happened in the intervening 40 years? Go for it! Want to clear up that the Soviet Union isn't a thing any more? Be my guest.
 
