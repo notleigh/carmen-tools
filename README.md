@@ -50,6 +50,8 @@ npm test
 ## Web interface
 There's a basic web interface included that uses the same underlying libraries. Drop in a `.CIT` file, edit away, and then save it back out again.
 
+It's hosted at https://notleigh.github.io/carmen-tools/ and redeploys on every push to `main`.
+
 Run a local dev server with
 ```
 npm run dev          # editor at http://localhost:5173
